@@ -314,32 +314,32 @@ public:
 
     void findMax(float x, float y, float z, string mesh) {
         if (mesh == "santa") {
-            if (x < santaMax.x)
+            if (x > santaMax.x)
                 santaMax.x = x;
-            if (y < santaMax.y)
+            if (y > santaMax.y)
                 santaMax.y = y;
-            if (z < santaMax.z)
+            if (z > santaMax.z)
                 santaMax.z = z;
         } else if (mesh == "sleigh") {
-            if (x < sleighMax.x)
+            if (x > sleighMax.x)
                 sleighMax.x = x;
-            if (y < sleighMax.y)
+            if (y > sleighMax.y)
                 sleighMax.y = y;
-            if (z < sleighMax.z)
+            if (z > sleighMax.z)
                 sleighMax.z = z;
         } else if (mesh == "house") {
-            if (x < houseMax.x)
+            if (x > houseMax.x)
                 houseMax.x = x;
-            if (y < houseMax.y)
+            if (y > houseMax.y)
                 houseMax.y = y;
-            if (z < houseMax.z)
+            if (z > houseMax.z)
                 houseMax.z = z;
         } else {
-            if (x < carMax.x)
+            if (x > carMax.x)
                 carMax.x = x;
-            if (y < carMax.y)
+            if (y > carMax.y)
                 carMax.y = y;
-            if (z < carMax.z)
+            if (z > carMax.z)
                 carMax.z = z;
         }
     }
