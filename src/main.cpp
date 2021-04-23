@@ -33,11 +33,13 @@ public:
 	std::shared_ptr<Program> prog;
 
 	// Shape to be used (from  file) - modify to support multiple
-    //vector<shared_ptr<Shape>> mesh;
-	vector<shared_ptr<Shape>> treeMesh;
     vector<shared_ptr<Shape>> carMesh;
+    vector<shared_ptr<Shape>> houseMesh;
+    vector<shared_ptr<Shape>> santaMesh;
+    vector<shared_ptr<Shape>> sleighMesh;
     shared_ptr<Shape> floorMesh;
     shared_ptr<Shape> lampMesh;
+    shared_ptr<Shape> treeMesh;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -46,7 +48,14 @@ public:
 	GLuint VertexBufferID;
 
 	//example data that might be useful when trying to compute bounds on multi-shape
-	vec3 gMin;
+	vec3 santaMin;
+    vec3 santaMax;
+    vec3 sleighMin;
+    vec3 sleighMax;
+    vec3 houseMin;
+    vec3 houseMax;
+    vec3 carMin;
+    vec3 carMax;
 
     // animation variable
     float driveTheta = 0;
@@ -271,6 +280,70 @@ public:
 		prog->addAttribute("vertNor");
 	}
 
+    void findMin(float x, float y, float z, string mesh) {
+        if (mesh == "santa") {
+            if (x < santaMin.x)
+                santaMin.x = x;
+            if (y < santaMin.y)
+                santaMin.y = y;
+            if (z < santaMin.z)
+                santaMin.z = z;
+        } else if (mesh == "sleigh") {
+            if (x < sleighMin.x)
+                sleighMin.x = x;
+            if (y < sleighMin.y)
+                sleighMin.y = y;
+            if (z < sleighMin.z)
+                sleighMin.z = z;
+        } else if (mesh == "house") {
+            if (x < houseMin.x)
+                houseMin.x = x;
+            if (y < houseMin.y)
+                houseMin.y = y;
+            if (z < houseMin.z)
+                houseMin.z = z;
+        } else {
+            if (x < carMin.x)
+                carMin.x = x;
+            if (y < carMin.y)
+                carMin.y = y;
+            if (z < carMin.z)
+                carMin.z = z;
+        }
+    }
+
+    void findMax(float x, float y, float z, string mesh) {
+        if (mesh == "santa") {
+            if (x < santaMax.x)
+                santaMax.x = x;
+            if (y < santaMax.y)
+                santaMax.y = y;
+            if (z < santaMax.z)
+                santaMax.z = z;
+        } else if (mesh == "sleigh") {
+            if (x < sleighMax.x)
+                sleighMax.x = x;
+            if (y < sleighMax.y)
+                sleighMax.y = y;
+            if (z < sleighMax.z)
+                sleighMax.z = z;
+        } else if (mesh == "house") {
+            if (x < houseMax.x)
+                houseMax.x = x;
+            if (y < houseMax.y)
+                houseMax.y = y;
+            if (z < houseMax.z)
+                houseMax.z = z;
+        } else {
+            if (x < carMax.x)
+                carMax.x = x;
+            if (y < carMax.y)
+                carMax.y = y;
+            if (z < carMax.z)
+                carMax.z = z;
+        }
+    }
+
 	void initGeom(const std::string& resourceDirectory)
 	{
 
@@ -290,9 +363,6 @@ public:
             floorMesh->createShape(TOshapes[0]);
             floorMesh->measure();
             floorMesh->init();
-
-            gMin.x = floorMesh->min.x;
-            gMin.y = floorMesh->min.y;
 		}
 
         rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/streetlamp.obj").c_str());
@@ -303,13 +373,20 @@ public:
             lampMesh->createShape(TOshapes[0]);
             lampMesh->measure();
             lampMesh->init();
-
-            gMin.x = lampMesh->min.x;
-            gMin.y = lampMesh->min.y;
 		}
 
-		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/Fir_Tree.obj").c_str());
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/xmas.obj").c_str());
 		if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            treeMesh = make_shared<Shape>(false);
+            treeMesh->createShape(TOshapes[0]);
+            treeMesh->measure();
+            treeMesh->init();
+		}
+
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/sleigh.obj").c_str());
+        if (!rc) {
 			cerr << errStr << endl;
 		} else {
             for (int i = 0; i < TOshapes.size(); i++) {
@@ -318,11 +395,47 @@ public:
                 tmp->measure();
                 tmp->init();
 
-                gMin.x = tmp->min.x;
-		        gMin.y = tmp->min.y;
-                treeMesh.push_back(tmp);
+                findMin(tmp->min.x, tmp->min.y, tmp->min.z, "sleigh");
+                findMax(tmp->max.x, tmp->max.y, tmp->max.z, "sleigh");
+
+                sleighMesh.push_back(tmp);
             }
 		}
+
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/santa.obj").c_str());
+        if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            for (int i = 0; i < TOshapes.size(); i++) {
+                shared_ptr<Shape> tmp = make_shared<Shape>(false);
+                tmp->createShape(TOshapes[i]);
+                tmp->measure();
+                tmp->init();
+
+                findMin(tmp->min.x, tmp->min.y, tmp->min.z, "santa");
+                findMax(tmp->max.x, tmp->max.y, tmp->max.z, "santa");
+
+                santaMesh.push_back(tmp);
+            }
+		}
+
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/smallHouse.obj").c_str());
+        if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            for (int i = 0; i < TOshapes.size(); i++) {
+                shared_ptr<Shape> tmp = make_shared<Shape>(false);
+                tmp->createShape(TOshapes[i]);
+                tmp->measure();
+                tmp->init();
+
+                findMin(tmp->min.x, tmp->min.y, tmp->min.z, "house");
+                findMax(tmp->max.x, tmp->max.y, tmp->max.z, "house");
+                
+                houseMesh.push_back(tmp);
+            }
+		}
+
 
         rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/car.obj").c_str());
 		if (!rc) {
@@ -334,15 +447,12 @@ public:
                 tmp->measure();
                 tmp->init();
 
-                gMin.x = tmp->min.x;
-		        gMin.y = tmp->min.y;
+                findMin(tmp->min.x, tmp->min.y, tmp->min.z, "car");
+                findMax(tmp->max.x, tmp->max.y, tmp->max.z, "car");
+
                 carMesh.push_back(tmp);
             }
 		}
-		//read out information stored in the shape about its size - something like this...
-		//then do something with that information.....
-		// gMin.x = mesh->min.x;
-		// gMin.y = mesh->min.y;
 	}
 
     void drawTrees(float M[], float V[], float P[]) {
@@ -351,26 +461,20 @@ public:
         float treeRotate[16] = {0};
         float intermediate[16] = {0};
 
-        float zVals[6] = {15, 0, -15, 15, 0, -15};
-        float xVals[6] = {15, 15, 15, -15, -15,-15};
+        float zVals[10] = {30, 15, 0, -15, -30, 30, 15, 0, -15, -30};
+        float xVals[10] = {15, 15, 15, 15, 15, -15, -15,-15, -15, -15};
 
         createIdentityMat(intermediate);
-        createScaleMat(treeScale, 3, 3, 3);
+        createScaleMat(treeScale, 0.5, 0.5, 0.5);
         createRotateMatY(treeRotate, 1.5);
         multMat(intermediate, treeRotate, treeScale);
 
-        prog->bind();
-        glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-        for (int j=0; j < 6; j++) {
+        for (int j=0; j < 10; j++) {
             createTranslateMat(treeTrans, xVals[j], 0, zVals[j]);
             multMat(M, treeTrans, intermediate);
             glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-            for (int i=0; i < treeMesh.size(); i++) {
-                treeMesh[i]->draw(prog);
-            }
+            treeMesh->draw(prog);
         }
-        prog->unbind();
     }
 
     void drawLamps(float M[], float V[], float P[]) {
@@ -379,30 +483,93 @@ public:
         float lampRotate[16] = {0};
         float intermediate[16] = {0};
 
-        float zVals[2] = {7.5, -7.5};
+        float zVals[4] = {22.5, 7.5, -7.5, -22.5};
 
         createScaleMat(lampScale, 3, 3, 3);
         createIdentityMat(intermediate);
         createRotateMatY(lampRotate, 3.14159);
-        prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
 
-        for (int l=0; l < 2; l++) {
+        for (int l=0; l < 4; l++) {
             createTranslateMat(lampTrans, 15, 0, zVals[l]);
             multMat(M, lampTrans, lampScale);
             glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
             lampMesh->draw(prog);
         }
 
-        for (int r=0; r < 2; r++) {
+        for (int r=0; r < 4; r++) {
             multMat(intermediate, lampRotate, lampScale);
             createTranslateMat(lampTrans, -15, 0, zVals[r]);
             multMat(M, lampTrans, intermediate);
             glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
             lampMesh->draw(prog);
         }
-		prog->unbind();
+    }
+
+    void drawHouse(float M[], float V[], float P[]) {
+        float houseTrans[16] = {0};
+        float houseScale[16] = {0};
+        float houseRotate[16] = {0};
+        float intermediate[16] = {0};
+
+        createScaleMat(houseScale, 0.07, 0.07, 0.07);
+        createRotateMatY(houseRotate, 1.5);
+        createTranslateMat(houseTrans, 0, 0, -23);
+        multMat(intermediate, houseRotate, houseScale);
+        multMat(M, houseTrans, intermediate);
+
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+        for (int i=0; i < houseMesh.size(); i++) {
+            houseMesh[i]->draw(prog);
+        }
+    }
+
+    void drawCar(float M[], float V[], float P[]) {
+        float carTrans[16] = {0};
+        float carScale[16] = {0};
+        float carFirstTrans[16] = {0};
+        float intermediate[16] = {0};
+        driveTheta = 3*sin(glfwGetTime());
+
+        createScaleMat(carScale, 0.4, 0.4, 0.4);
+        createTranslateMat(carFirstTrans, -5, 0.25, 8);
+        createTranslateMat(carTrans, 0, 0, driveTheta);
+        multMat(intermediate, carFirstTrans, carScale);
+        multMat(M, carTrans, intermediate);
+
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+        for (int i=0; i < carMesh.size(); i++) {
+            carMesh[i]->draw(prog);
+        }
+    }
+
+    void drawDecorations(float M[], float V[], float P[]) {
+        float santaTrans[16] = {0};
+        float santaScale[16] = {0};
+
+        createScaleMat(santaScale, 0.0125, 0.0125, 0.0125);
+        createTranslateMat(santaTrans, -7, 0, -15);
+        multMat(M, santaTrans, santaScale);
+
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+        for (int i=0; i < santaMesh.size(); i++) {
+            santaMesh[i]->draw(prog);
+        }
+
+        float sleighTrans[16] = {0};
+        float sleighScale[16] = {0};
+        float sleighRotate[16] = {0};
+        float intermediate[16] = {0};
+
+        createScaleMat(sleighScale, 1.25, 1.25, 1.25);
+        createRotateMatY(sleighRotate, 1.5);
+        createTranslateMat(sleighTrans, 0, 9, -25);
+        multMat(intermediate, sleighRotate, sleighScale);
+        multMat(M, sleighTrans, intermediate);
+
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+        for (int i=0; i < sleighMesh.size(); i++) {
+            sleighMesh[i]->draw(prog);
+        }
     }
 
 	void render()
@@ -426,7 +593,7 @@ public:
 		createIdentityMat(M);
         float globalTrans[16] = {0};
         float globalRotate[16] = {0};
-        createTranslateMat(globalTrans, 0, -4, -30);
+        createTranslateMat(globalTrans, 0, -4, -25);
         createRotateMatY(globalRotate, sceneRotate);
         multMat(V, globalTrans, globalRotate);
 
@@ -434,7 +601,7 @@ public:
         float floorTrans[16] = {0};
         float floorScale[16] = {0};
 
-        createScaleMat(floorScale, 50, 0.5, 50);
+        createScaleMat(floorScale, 50, 0.5, 70);
         createTranslateMat(floorTrans, 0, 0, 0);
         multMat(M, floorTrans, floorScale);
 
@@ -443,73 +610,22 @@ public:
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
         floorMesh->draw(prog);
-		prog->unbind();
 
-        driveTheta = sin(glfwGetTime());
+        // Draw house
+        drawHouse(M, V, P);
+
+        // Draw santa and sleigh
+        drawDecorations(M, V, P);
 
         // Draw car
-        float carTrans[16] = {0};
-        float carScale[16] = {0};
-
-        createScaleMat(carScale, 0.5, 0.5, 0.5);
-        createTranslateMat(carTrans, 0, 0.25, driveTheta);
-        multMat(M, carTrans, carScale);
-
-        prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-        for (int i=0; i < carMesh.size(); i++) {
-            carMesh[i]->draw(prog);
-        }
-		prog->unbind();
+        drawCar(M, V, P);
 
         // Draw trees
         drawTrees(M, V, P);
 
-        // Draw ornaments
+        // Draw streetlamps
         drawLamps(M, V, P);
-
-        // // Draw second vertical line of H
-        // createScaleMat(cubeScale, 0.75, 4.5, 0.7);
-        // createTranslateMat(cubeTrans, -0.75, 0, 0);
-        // multMat(M, cubeTrans, cubeScale);
-
-        // prog->bind();
-		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		// mesh->draw(prog);
-		// prog->unbind();
-
-        // // Draw vertical line of I
-        // createScaleMat(cubeScale, 0.75, 4.5, 0.7);
-        // createTranslateMat(cubeTrans, 0.75, 0, 0);
-        // multMat(M, cubeTrans, cubeScale);
-
-        // prog->bind();
-		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		// mesh->draw(prog);
-		// prog->unbind();
-
-        // // Draw slanted line of H
-        // float cubeRotate[16] = {0};
-        // float temp[16] = {0};
-        // createRotateMatZ(cubeRotate, -0.55);
-
-        // createScaleMat(cubeScale, 2.7, 0.6, 0.7);
-        // createTranslateMat(cubeTrans, -1.5, 0.25, 0);
-        // multMat(temp, cubeRotate, cubeScale);
-        // multMat(M, cubeTrans, temp);
-
-        // prog->bind();
-		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		// mesh->draw(prog);
-		// prog->unbind();
+        prog->unbind();
 	}
 };
 
