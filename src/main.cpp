@@ -48,6 +48,9 @@ public:
 	//example data that might be useful when trying to compute bounds on multi-shape
 	vec3 gMin;
 
+    // animation variable
+    float driveTheta = 0;
+    float sceneRotate = -0.3;
 
 	void printMat(float *A, const char *name = 0)
 	{
@@ -223,12 +226,12 @@ public:
 		if (key == GLFW_KEY_Z && action == GLFW_RELEASE) {
 			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		}
-        // if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-		// 	globalRot += 1;
-		// }
-        // if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
-		// 	globalRot -= 1;
-		// }
+        if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+			sceneRotate += 0.3;
+		}
+		if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+			sceneRotate -= 0.3;
+		}
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -306,7 +309,6 @@ public:
 		}
 
 		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/Fir_Tree.obj").c_str());
-        cout << TOshapes.size() << endl;
 		if (!rc) {
 			cerr << errStr << endl;
 		} else {
@@ -323,7 +325,6 @@ public:
 		}
 
         rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/car.obj").c_str());
-        cout << TOshapes.size() << endl;
 		if (!rc) {
 			cerr << errStr << endl;
 		} else {
@@ -425,8 +426,8 @@ public:
 		createIdentityMat(M);
         float globalTrans[16] = {0};
         float globalRotate[16] = {0};
-        createTranslateMat(globalTrans, 0, -4, -50);
-        createRotateMatY(globalRotate, 0);
+        createTranslateMat(globalTrans, 0, -4, -30);
+        createRotateMatY(globalRotate, sceneRotate);
         multMat(V, globalTrans, globalRotate);
 
         // Draw floor
@@ -444,12 +445,14 @@ public:
         floorMesh->draw(prog);
 		prog->unbind();
 
+        driveTheta = sin(glfwGetTime());
+
         // Draw car
         float carTrans[16] = {0};
         float carScale[16] = {0};
 
         createScaleMat(carScale, 0.5, 0.5, 0.5);
-        createTranslateMat(carTrans, 0, 0.25, 15);
+        createTranslateMat(carTrans, 0, 0.25, driveTheta);
         multMat(M, carTrans, carScale);
 
         prog->bind();
