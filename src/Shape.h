@@ -13,7 +13,7 @@ class Program;
 class Shape
 {
 public:
-	Shape();
+	Shape(bool textured);
 	virtual ~Shape();
 	void createShape(tinyobj::shape_t & shape);
 	void init();
@@ -31,7 +31,8 @@ private:
 	unsigned posBufID;
 	unsigned norBufID;
 	unsigned texBufID;
-   unsigned vaoID;
+    unsigned vaoID;
+	bool texOff;
 };
 
 #endif

@@ -7,7 +7,7 @@
 
 using namespace std;
 
-Shape::Shape() :
+Shape::Shape(bool textured) :
 	eleBufID(0),
 	posBufID(0),
 	norBufID(0),
@@ -16,6 +16,7 @@ Shape::Shape() :
 {
 	min = glm::vec3(0);
 	max = glm::vec3(0);
+	texOff = !textured;
 }
 
 Shape::~Shape()
@@ -78,8 +79,8 @@ void Shape::init()
 		glBufferData(GL_ARRAY_BUFFER, norBuf.size()*sizeof(float), &norBuf[0], GL_STATIC_DRAW);
 	}
 	
-	// Send the texture array to the GPU
-	if(texBuf.empty()) {
+	// Send the texture array to the GPU - for now no textures
+	if(texBuf.empty() || texOff) {
 		texBufID = 0;
 	} else {
 		glGenBuffers(1, &texBufID);
@@ -99,6 +100,7 @@ void Shape::init()
 	assert(glGetError() == GL_NO_ERROR);
 }
 
+//always untextured for intro labs until texture mapping
 void Shape::draw(const shared_ptr<Program> prog) const
 {
 	int h_pos, h_nor, h_tex;

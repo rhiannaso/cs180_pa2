@@ -33,7 +33,11 @@ public:
 	std::shared_ptr<Program> prog;
 
 	// Shape to be used (from  file) - modify to support multiple
-	shared_ptr<Shape> mesh;
+    //vector<shared_ptr<Shape>> mesh;
+	vector<shared_ptr<Shape>> treeMesh;
+    vector<shared_ptr<Shape>> carMesh;
+    shared_ptr<Shape> floorMesh;
+    shared_ptr<Shape> lampMesh;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -219,6 +223,12 @@ public:
 		if (key == GLFW_KEY_Z && action == GLFW_RELEASE) {
 			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		}
+        // if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+		// 	globalRot += 1;
+		// }
+        // if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+		// 	globalRot -= 1;
+		// }
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -269,20 +279,130 @@ public:
 		vector<tinyobj::material_t> objMaterials;
 		string errStr;
 		//load in the mesh and make the shape(s)
-		bool rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cube.obj").c_str());
+        bool rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cube.obj").c_str());
 		if (!rc) {
 			cerr << errStr << endl;
 		} else {
-			mesh = make_shared<Shape>();
-			mesh->createShape(TOshapes[0]);
-			mesh->measure();
-			mesh->init();
+            floorMesh = make_shared<Shape>(false);
+            floorMesh->createShape(TOshapes[0]);
+            floorMesh->measure();
+            floorMesh->init();
+
+            gMin.x = floorMesh->min.x;
+            gMin.y = floorMesh->min.y;
+		}
+
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/streetlamp.obj").c_str());
+		if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            lampMesh = make_shared<Shape>(false);
+            lampMesh->createShape(TOshapes[0]);
+            lampMesh->measure();
+            lampMesh->init();
+
+            gMin.x = lampMesh->min.x;
+            gMin.y = lampMesh->min.y;
+		}
+
+		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/Fir_Tree.obj").c_str());
+        cout << TOshapes.size() << endl;
+		if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            for (int i = 0; i < TOshapes.size(); i++) {
+                shared_ptr<Shape> tmp = make_shared<Shape>(false);
+                tmp->createShape(TOshapes[i]);
+                tmp->measure();
+                tmp->init();
+
+                gMin.x = tmp->min.x;
+		        gMin.y = tmp->min.y;
+                treeMesh.push_back(tmp);
+            }
+		}
+
+        rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/car.obj").c_str());
+        cout << TOshapes.size() << endl;
+		if (!rc) {
+			cerr << errStr << endl;
+		} else {
+            for (int i = 0; i < TOshapes.size(); i++) {
+                shared_ptr<Shape> tmp = make_shared<Shape>(false);
+                tmp->createShape(TOshapes[i]);
+                tmp->measure();
+                tmp->init();
+
+                gMin.x = tmp->min.x;
+		        gMin.y = tmp->min.y;
+                carMesh.push_back(tmp);
+            }
 		}
 		//read out information stored in the shape about its size - something like this...
 		//then do something with that information.....
-		gMin.x = mesh->min.x;
-		gMin.y = mesh->min.y;
+		// gMin.x = mesh->min.x;
+		// gMin.y = mesh->min.y;
 	}
+
+    void drawTrees(float M[], float V[], float P[]) {
+        float treeTrans[16] = {0};
+        float treeScale[16] = {0};
+        float treeRotate[16] = {0};
+        float intermediate[16] = {0};
+
+        float zVals[6] = {15, 0, -15, 15, 0, -15};
+        float xVals[6] = {15, 15, 15, -15, -15,-15};
+
+        createIdentityMat(intermediate);
+        createScaleMat(treeScale, 3, 3, 3);
+        createRotateMatY(treeRotate, 1.5);
+        multMat(intermediate, treeRotate, treeScale);
+
+        prog->bind();
+        glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
+        for (int j=0; j < 6; j++) {
+            createTranslateMat(treeTrans, xVals[j], 0, zVals[j]);
+            multMat(M, treeTrans, intermediate);
+            glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+            for (int i=0; i < treeMesh.size(); i++) {
+                treeMesh[i]->draw(prog);
+            }
+        }
+        prog->unbind();
+    }
+
+    void drawLamps(float M[], float V[], float P[]) {
+        float lampTrans[16] = {0};
+        float lampScale[16] = {0};
+        float lampRotate[16] = {0};
+        float intermediate[16] = {0};
+
+        float zVals[2] = {7.5, -7.5};
+
+        createScaleMat(lampScale, 3, 3, 3);
+        createIdentityMat(intermediate);
+        createRotateMatY(lampRotate, 3.14159);
+        prog->bind();
+		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
+
+        for (int l=0; l < 2; l++) {
+            createTranslateMat(lampTrans, 15, 0, zVals[l]);
+            multMat(M, lampTrans, lampScale);
+            glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+            lampMesh->draw(prog);
+        }
+
+        for (int r=0; r < 2; r++) {
+            multMat(intermediate, lampRotate, lampScale);
+            createTranslateMat(lampTrans, -15, 0, zVals[r]);
+            multMat(M, lampTrans, intermediate);
+            glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+            lampMesh->draw(prog);
+        }
+		prog->unbind();
+    }
 
 	void render()
 	{
@@ -304,66 +424,89 @@ public:
 		createPerspectiveMat(P, 70.0f, aspect, 0.1, 100.0f);	
 		createIdentityMat(M);
         float globalTrans[16] = {0};
-		float globalRotate[16] = {0};
-        createTranslateMat(globalTrans, 0, 0, -6);
-        createRotateMatY(globalRotate, -0.5);
+        float globalRotate[16] = {0};
+        createTranslateMat(globalTrans, 0, -4, -50);
+        createRotateMatY(globalRotate, 0);
         multMat(V, globalTrans, globalRotate);
-        float cubeTrans[16] = {0};
-        float cubeScale[16] = {0};
 
-        // Draw first vertical line of H
-        createScaleMat(cubeScale, 0.75, 4.5, 0.7);
-        createTranslateMat(cubeTrans, -2.2, 0, 0);
-        multMat(M, cubeTrans, cubeScale);
+        // Draw floor
+        float floorTrans[16] = {0};
+        float floorScale[16] = {0};
 
-		// Draw mesh using GLSL.
-		prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		mesh->draw(prog);
-		prog->unbind();
-
-        // Draw second vertical line of H
-        createScaleMat(cubeScale, 0.75, 4.5, 0.7);
-        createTranslateMat(cubeTrans, -0.75, 0, 0);
-        multMat(M, cubeTrans, cubeScale);
+        createScaleMat(floorScale, 50, 0.5, 50);
+        createTranslateMat(floorTrans, 0, 0, 0);
+        multMat(M, floorTrans, floorScale);
 
         prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		mesh->draw(prog);
+        floorMesh->draw(prog);
 		prog->unbind();
 
-        // Draw vertical line of I
-        createScaleMat(cubeScale, 0.75, 4.5, 0.7);
-        createTranslateMat(cubeTrans, 0.75, 0, 0);
-        multMat(M, cubeTrans, cubeScale);
+        // Draw car
+        float carTrans[16] = {0};
+        float carScale[16] = {0};
+
+        createScaleMat(carScale, 0.5, 0.5, 0.5);
+        createTranslateMat(carTrans, 0, 0.25, 15);
+        multMat(M, carTrans, carScale);
 
         prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		mesh->draw(prog);
+        for (int i=0; i < carMesh.size(); i++) {
+            carMesh[i]->draw(prog);
+        }
 		prog->unbind();
 
-        // Draw slanted line of H
-        float cubeRotate[16] = {0};
-        float temp[16] = {0};
-        createRotateMatZ(cubeRotate, -0.55);
+        // Draw trees
+        drawTrees(M, V, P);
 
-        createScaleMat(cubeScale, 2.7, 0.6, 0.7);
-        createTranslateMat(cubeTrans, -1.5, 0.25, 0);
-        multMat(temp, cubeRotate, cubeScale);
-        multMat(M, cubeTrans, temp);
+        // Draw ornaments
+        drawLamps(M, V, P);
 
-        prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-		mesh->draw(prog);
-		prog->unbind();
+        // // Draw second vertical line of H
+        // createScaleMat(cubeScale, 0.75, 4.5, 0.7);
+        // createTranslateMat(cubeTrans, -0.75, 0, 0);
+        // multMat(M, cubeTrans, cubeScale);
+
+        // prog->bind();
+		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
+		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+		// mesh->draw(prog);
+		// prog->unbind();
+
+        // // Draw vertical line of I
+        // createScaleMat(cubeScale, 0.75, 4.5, 0.7);
+        // createTranslateMat(cubeTrans, 0.75, 0, 0);
+        // multMat(M, cubeTrans, cubeScale);
+
+        // prog->bind();
+		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
+		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+		// mesh->draw(prog);
+		// prog->unbind();
+
+        // // Draw slanted line of H
+        // float cubeRotate[16] = {0};
+        // float temp[16] = {0};
+        // createRotateMatZ(cubeRotate, -0.55);
+
+        // createScaleMat(cubeScale, 2.7, 0.6, 0.7);
+        // createTranslateMat(cubeTrans, -1.5, 0.25, 0);
+        // multMat(temp, cubeRotate, cubeScale);
+        // multMat(M, cubeTrans, temp);
+
+        // prog->bind();
+		// glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		// glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
+		// glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+		// mesh->draw(prog);
+		// prog->unbind();
 	}
 };
 
