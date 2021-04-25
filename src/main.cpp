@@ -32,6 +32,9 @@ public:
 	// Our shader program
 	std::shared_ptr<Program> prog;
 
+    // Our shader program
+	std::shared_ptr<Program> solidColorProg;
+
 	// Shape to be used (from  file) - modify to support multiple
     vector<shared_ptr<Shape>> carMesh;
     vector<shared_ptr<Shape>> houseMesh;
@@ -278,6 +281,18 @@ public:
 		prog->addUniform("M");
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
+
+        // Initialize the GLSL program.
+		solidColorProg = make_shared<Program>();
+		solidColorProg->setVerbose(true);
+		solidColorProg->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/solid_frag.glsl");
+		solidColorProg->init();
+		solidColorProg->addUniform("P");
+		solidColorProg->addUniform("V");
+		solidColorProg->addUniform("M");
+		solidColorProg->addUniform("solidColor");
+		solidColorProg->addAttribute("vertPos");
+		solidColorProg->addAttribute("vertNor");
 	}
 
     void findMin(float x, float y, float z, string mesh) {
@@ -605,12 +620,18 @@ public:
         createTranslateMat(floorTrans, 0, 0, 0);
         multMat(M, floorTrans, floorScale);
 
-        prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
-        floorMesh->draw(prog);
 
+        solidColorProg->bind();
+		glUniformMatrix4fv(solidColorProg->getUniform("P"), 1, GL_FALSE, P);
+		glUniformMatrix4fv(solidColorProg->getUniform("V"), 1, GL_FALSE, V);
+        glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
+		glUniform3f(solidColorProg->getUniform("solidColor"), 0.3, 0.7, 0.4);
+        floorMesh->draw(prog);
+		solidColorProg->unbind();
+
+        prog->bind();
+        glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P);
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, V);
         // Draw house
         drawHouse(M, V, P);
 
