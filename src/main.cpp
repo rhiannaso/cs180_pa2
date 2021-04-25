@@ -470,6 +470,11 @@ public:
 		}
 	}
 
+    float findCenter(float min, float max) {
+        float dist = (max-min)/2;
+        return max-dist;
+    }
+
     void drawTrees(float M[], float V[], float P[]) {
         float treeTrans[16] = {0};
         float treeScale[16] = {0};
@@ -525,11 +530,16 @@ public:
         float houseScale[16] = {0};
         float houseRotate[16] = {0};
         float intermediate[16] = {0};
+        float initialTrans[16] = {0};
+
+        float center = findCenter(houseMin.z, houseMax.z);
+        createTranslateMat(initialTrans, 0, 0, -center);
 
         createScaleMat(houseScale, 0.07, 0.07, 0.07);
         createRotateMatY(houseRotate, 1.5);
         createTranslateMat(houseTrans, 0, 0, -23);
-        multMat(intermediate, houseRotate, houseScale);
+        multMat(M, houseScale, initialTrans);
+        multMat(intermediate, houseRotate, M);
         multMat(M, houseTrans, intermediate);
 
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
@@ -560,10 +570,16 @@ public:
     void drawDecorations(float M[], float V[], float P[]) {
         float santaTrans[16] = {0};
         float santaScale[16] = {0};
+        float intermediate[16] = {0};
+        float initialTrans[16] = {0};
+
+        float center = findCenter(santaMin.z, santaMax.z);
+        createTranslateMat(initialTrans, 0, 0, -center);
 
         createScaleMat(santaScale, 0.0125, 0.0125, 0.0125);
         createTranslateMat(santaTrans, -7, 0, -15);
-        multMat(M, santaTrans, santaScale);
+        multMat(intermediate, santaScale, initialTrans);
+        multMat(M, santaTrans, intermediate);
 
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
         for (int i=0; i < santaMesh.size(); i++) {
@@ -573,12 +589,15 @@ public:
         float sleighTrans[16] = {0};
         float sleighScale[16] = {0};
         float sleighRotate[16] = {0};
-        float intermediate[16] = {0};
+
+        center = findCenter(sleighMin.z, sleighMax.z);
+        createTranslateMat(initialTrans, 0, 0, -center);
 
         createScaleMat(sleighScale, 1.25, 1.25, 1.25);
         createRotateMatY(sleighRotate, 1.5);
-        createTranslateMat(sleighTrans, 0, 9, -25);
-        multMat(intermediate, sleighRotate, sleighScale);
+        createTranslateMat(sleighTrans, 0, 9, -25.3);
+        multMat(M, sleighScale, initialTrans);
+        multMat(intermediate, sleighRotate, M);
         multMat(M, sleighTrans, intermediate);
 
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, M);
